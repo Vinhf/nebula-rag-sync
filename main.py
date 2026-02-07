@@ -19,7 +19,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("daily-sync.log")
+        logging.FileHandler("main.log")
     ]
 )
 logger = logging.getLogger(__name__)

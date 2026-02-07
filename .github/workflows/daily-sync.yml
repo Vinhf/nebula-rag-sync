@@ -1,4 +1,4 @@
-name: Daily KB Sync - OptiSigns
+name: Daily KB Sync
 
 on:
   schedule:
@@ -26,7 +26,6 @@ jobs:
       - name: Run daily sync
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          VECTOR_STORE_ID: ${{ secrets.VECTOR_STORE_ID }}
         run: python main.py
 
       - name: Upload log artifact (optional, để lưu log nếu cần)
@@ -34,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4  
         with:
           name: sync-logs
-          path: daily-sync.log  
+          path: main.log  
