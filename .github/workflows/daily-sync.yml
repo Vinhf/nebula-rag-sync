@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+  
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -31,7 +31,7 @@ jobs:
 
       - name: Upload log artifact (optional, để lưu log nếu cần)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4  
         with:
           name: sync-logs
           path: daily-sync.log  # Nếu bạn có file log trong main.py

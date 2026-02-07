@@ -22,9 +22,6 @@ STATE_FILE = Path(__file__).parent.parent / "kb_state.json"
 VECTOR_STORE_ID = os.getenv("OPENAI_API_KEY")        # vs_xxxx từ env hoặc hardcode tạm
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not VECTOR_STORE_ID or not OPENAI_API_KEY:
-    raise ValueError("Missing VECTOR_STORE_ID or OPENAI_API_KEY in .env")
-
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def load_state() -> dict:
