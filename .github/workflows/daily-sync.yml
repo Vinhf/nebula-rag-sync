@@ -2,8 +2,8 @@ name: Daily KB Sync - OptiSigns
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # Chạy lúc 3:00 AM UTC hàng ngày (~10:00 AM VN)
-  workflow_dispatch:     # Cho phép chạy thủ công để test (rất hữu ích)
+    - cron: '0 3 * * *' 
+  workflow_dispatch:   
 
 jobs:
   sync:
@@ -34,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v4  
         with:
           name: sync-logs
-          path: daily-sync.log  # Nếu bạn có file log trong main.py
+          path: daily-sync.log  
