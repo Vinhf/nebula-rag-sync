@@ -1,6 +1,8 @@
 # app.py
 import os
+import json
 from pathlib import Path
+from xml.dom.minidom import Document
 from dotenv import load_dotenv
 import streamlit as st
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
@@ -23,21 +25,21 @@ st.caption("Demo miễn phí – Dữ liệu được cập nhật tự động 
 # Load documents
 @st.cache_resource
 def get_vectorstore():
-    loader = DirectoryLoader("articles", glob="**/*.md", loader_cls=TextLoader, loader_kwargs={"encoding": "utf-8"})
-    docs = loader.load() [:5]
+    
+    docs = load_articles_with_metadata() [:5]
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=200)
     chunks = text_splitter.split_documents(docs)
 
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/gemini-embedding-001",  # tên đúng hiện tại
-        google_api_key=os.getenv("GEMINI_API_KEY")
+    model="models/gemini-embedding-001",
+    google_api_key=os.getenv("GEMINI_API_KEY")
     )
 
     vectorstore = Chroma.from_documents(
-        chunks,
-        embeddings,
-        persist_directory="./chroma_db_optisigns"  # thư mục riêng để cache
+    chunks,
+    embeddings,
+    persist_directory="./chroma_db_optisigns"
     )
     return vectorstore.as_retriever(search_kwargs={"k": 4})
 
@@ -66,16 +68,49 @@ Answer:
 
 prompt = ChatPromptTemplate.from_template(prompt_template)
 
+
+def load_articles_with_metadata():
+    docs = []
+    articles_dir = Path("articles")
+    
+    for md_path in articles_dir.glob("*.md"):
+        slug = md_path.stem
+        meta_path = articles_dir / f"{slug}.meta.json"
+        
+        if not meta_path.exists():
+            continue  # bỏ qua nếu không có meta
+        
+        # Đọc meta
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        
+        article_url = meta.get("html_url") or meta.get("url") or "No URL found"
+        
+        # Đọc nội dung .md
+        with open(md_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Tạo document với metadata chứa URL thật
+        doc = Document(
+            page_content=content,
+            metadata={
+                "source": md_path.name,
+                "html_url": article_url,
+                "title": meta.get("title", slug.replace("-", " ").title())
+            }
+        )
+        docs.append(doc)
+    
+    return docs
+
 def format_docs(docs):
     formatted = []
     for doc in docs:
         content = doc.page_content
+        article_url = doc.metadata.get("html_url", "No URL found")
         
-        url_match = re.search(r'Article URL:\s*(https?://[^\s\n]+)', content, re.IGNORECASE)
-        article_url = url_match.group(1).strip() if url_match else "No URL found"
-        
-        main_content_start = content.find("Article URL:") + len("Article URL:") + len(article_url) + 10
-        main_content = content[main_content_start:].strip()[:600] + "..." if main_content_start > 0 else content[:600] + "..."
+        # Cắt nội dung chính (bỏ front-matter nếu cần)
+        main_content = content[:600] + "..."  # đơn giản, hoặc tinh chỉnh thêm
         
         formatted.append(f"Article URL: {article_url}\n{main_content}")
     
