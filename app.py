@@ -22,6 +22,39 @@ st.set_page_config(page_title="OptiBot", page_icon="🤖")
 st.title("OptiBot – Support Assistant")
 st.caption("Demo miễn phí – Dữ liệu được cập nhật tự động hàng ngày qua GitHub Actions")
 
+def load_articles_with_metadata():
+    docs = []
+    articles_dir = Path("articles")
+    
+    for md_path in articles_dir.glob("*.md"):
+        slug = md_path.stem
+        meta_path = articles_dir / f"{slug}.meta.json"
+        
+        if not meta_path.exists():
+            continue  # bỏ qua nếu không có meta
+        
+        # Đọc meta
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        
+        article_url = meta.get("html_url") or meta.get("url") or "No URL found"
+        
+        # Đọc nội dung .md
+        with open(md_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Tạo document với metadata chứa URL thật
+        doc = Document(
+            page_content=content,
+            metadata={
+                "source": md_path.name,
+                "html_url": article_url,
+                "title": meta.get("title", slug.replace("-", " ").title())
+            }
+        )
+        docs.append(doc)
+    
+    return docs
 # Load documents
 @st.cache_resource
 def get_vectorstore():
@@ -69,39 +102,7 @@ Answer:
 prompt = ChatPromptTemplate.from_template(prompt_template)
 
 
-def load_articles_with_metadata():
-    docs = []
-    articles_dir = Path("articles")
-    
-    for md_path in articles_dir.glob("*.md"):
-        slug = md_path.stem
-        meta_path = articles_dir / f"{slug}.meta.json"
-        
-        if not meta_path.exists():
-            continue  # bỏ qua nếu không có meta
-        
-        # Đọc meta
-        with open(meta_path, "r", encoding="utf-8") as f:
-            meta = json.load(f)
-        
-        article_url = meta.get("html_url") or meta.get("url") or "No URL found"
-        
-        # Đọc nội dung .md
-        with open(md_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        
-        # Tạo document với metadata chứa URL thật
-        doc = Document(
-            page_content=content,
-            metadata={
-                "source": md_path.name,
-                "html_url": article_url,
-                "title": meta.get("title", slug.replace("-", " ").title())
-            }
-        )
-        docs.append(doc)
-    
-    return docs
+
 
 def format_docs(docs):
     formatted = []
