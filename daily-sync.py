@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def main():
+def daily_sync():
     start_time = datetime.utcnow()
     logger.info("=== BẮT ĐẦU DAILY SYNC OPTISIGNS KB ===")
     logger.info(f"Thời gian bắt đầu: {start_time.isoformat()}Z")
@@ -57,4 +57,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    daily_sync()
