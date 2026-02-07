@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Constants
-BASE_URL = "https://support.optisigns.com/hc/en-us"
+BASE_URL = "https://support.optisigns.com/api/v2/help_center/en-us"
 
 ARTICLES_DIR = Path(__file__).parent.parent / "articles" 
 ARTICLES_DIR.mkdir(exist_ok=True)
@@ -143,7 +143,7 @@ updated_at: {article['updated_at']}
     return slug, meta
 
 
-def scrape_all_articles(max_articles: int = 30, max_pages: int = 10):
+def scrape_all_articles(max_articles: int = 30, max_pages: int = 30):
     """Scrape chỉ tối đa max_articles bài viết"""
     page = 1
     added_count = 0
@@ -190,5 +190,5 @@ def scrape_all_articles(max_articles: int = 30, max_pages: int = 10):
 
 if __name__ == "__main__":
     logger.info("Starting scraper...")
-    total = scrape_all_articles(max_articles=30, max_pages=10)
+    total = scrape_all_articles(max_pages=30)
     logger.info(f"Scraper finished. Total articles processed: {total}")
