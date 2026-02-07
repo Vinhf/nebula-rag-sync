@@ -32,14 +32,13 @@ def daily_sync():
     exit_code = 0
 
     try:
-        # 1. Scrape tất cả articles từ Zendesk API
         logger.info("Bước 1: Scrape articles từ Zendesk API...")
-        scraped_count = scrape_all_articles(max_pages=10)  # điều chỉnh nếu cần scrape hết
+        scraped_count = scrape_all_articles(max_pages=10) 
         logger.info(f"Scrape hoàn tất: {scraped_count} articles được xử lý")
 
-        # 2. Upload chỉ delta (dựa trên hash và state)
+    
         logger.info("Bước 2: Upload delta lên OpenAI Vector Store...")
-        upload_delta()  # hàm này đã có log added/updated/skipped
+        upload_delta() 
 
         logger.info("=== DAILY SYNC HOÀN TẤT THÀNH CÔNG ===")
 

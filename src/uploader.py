@@ -103,13 +103,13 @@ def delete_file_from_vector_store(openai_file_id: str):
 
 def upload_delta():
     """Main logic: detect & upload delta"""
-    state = load_state()  # slug → {"file_id": "...", "content_hash": "..."}
+    state = load_state() 
     new_state = state.copy()
 
     md_files = list(ARTICLES_DIR.glob("*.md")) [:5]
     logger.info(f"Found {len(md_files)} .md files to process")
 
-    to_upload_ids = []      # file_id cần attach batch
+    to_upload_ids = [] 
     added_count = 0
     updated_count = 0
     skipped_count = 0
@@ -125,14 +125,14 @@ def upload_delta():
                 logger.debug(f"Skipped (unchanged): {slug}")
                 continue
 
-            # Content thay đổi → xóa cũ, upload mới
+           
             logger.info(f"Updated content detected: {slug}")
             delete_file_from_vector_store(old["file_id"])
             updated_count += 1
         else:
             added_count += 1
 
-        # Upload file mới
+    
         new_file_id = upload_single_file(md_path)
         if new_file_id:
             to_upload_ids.append(new_file_id)
@@ -143,13 +143,13 @@ def upload_delta():
                 "md_filename": md_path.name
             }
 
-    # Attach batch một lần (hiệu quả hơn attach từng cái)
+
     attach_files_to_vector_store(to_upload_ids)
 
-    # Cập nhật state
+    
     save_state(new_state)
 
-    # Summary log
+    
     logger.info("─" * 50)
     logger.info(f"Upload delta summary:")
     logger.info(f"  Added   : {added_count}")

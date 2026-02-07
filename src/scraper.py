@@ -13,8 +13,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Constants
-BASE_URL = "https://support.optisigns.com/api/v2/help_center/en-us"
-ARTICLES_DIR = Path(__file__).parent.parent / "articles"  # ../../articles/
+BASE_URL = "https://support.optisigns.com/hc/en-us"
+
+ARTICLES_DIR = Path(__file__).parent.parent / "articles" 
 ARTICLES_DIR.mkdir(exist_ok=True)
 
 HEADERS = {
@@ -142,8 +143,8 @@ updated_at: {article['updated_at']}
     return slug, meta
 
 
-def scrape_all_articles(max_pages: int = 10):
-    """Scrape tất cả articles với pagination"""
+def scrape_all_articles(max_articles: int = 30, max_pages: int = 10):
+    """Scrape chỉ tối đa max_articles bài viết"""
     page = 1
     added_count = 0
 
@@ -165,6 +166,10 @@ def scrape_all_articles(max_pages: int = 10):
             break
 
         for article in articles:
+            if added_count >= max_articles:
+                logger.info(f"Đã đạt giới hạn {max_articles} bài. Dừng scrape.")
+                return added_count
+
             if article.get("draft") or article.get("outdated"):
                 logger.debug(f"Skipping draft/outdated: {article['title']}")
                 continue
@@ -185,5 +190,5 @@ def scrape_all_articles(max_pages: int = 10):
 
 if __name__ == "__main__":
     logger.info("Starting scraper...")
-    total = scrape_all_articles(max_pages=20)  # tăng nếu cần scrape hết (~4-5 pages)
+    total = scrape_all_articles(max_articles=30, max_pages=10)
     logger.info(f"Scraper finished. Total articles processed: {total}")
