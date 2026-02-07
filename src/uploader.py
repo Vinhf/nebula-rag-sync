@@ -6,7 +6,7 @@ import logging
 from openai import OpenAI
 from dotenv import load_dotenv
 import hashlib
-# Load env (cho local dev)
+
 load_dotenv()
 
 # Config logging
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Constants
 ARTICLES_DIR = Path(__file__).parent.parent / "articles"
 STATE_FILE = Path(__file__).parent.parent / "kb_state.json"
-VECTOR_STORE_ID = os.getenv("OPENAI_API_KEY")        # vs_xxxx từ env hoặc hardcode tạm
+VECTOR_STORE_ID = os.getenv("OPENAI_API_KEY") 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
