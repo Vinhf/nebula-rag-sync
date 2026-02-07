@@ -10,6 +10,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+import re
 
 
 load_dotenv()
@@ -66,7 +67,19 @@ Answer:
 prompt = ChatPromptTemplate.from_template(prompt_template)
 
 def format_docs(docs):
-    return "\n\n".join([f"Article URL: {d.metadata['source']}\n{d.page_content[:600]}" for d in docs])
+    formatted = []
+    for doc in docs:
+        content = doc.page_content
+        
+        url_match = re.search(r'Article URL:\s*(https?://[^\s\n]+)', content, re.IGNORECASE)
+        article_url = url_match.group(1).strip() if url_match else "No URL found"
+        
+        main_content_start = content.find("Article URL:") + len("Article URL:") + len(article_url) + 10
+        main_content = content[main_content_start:].strip()[:600] + "..." if main_content_start > 0 else content[:600] + "..."
+        
+        formatted.append(f"Article URL: {article_url}\n{main_content}")
+    
+    return "\n\n".join(formatted)
 
 chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
