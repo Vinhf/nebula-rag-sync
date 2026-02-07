@@ -1,0 +1,37 @@
+name: Daily KB Sync - OptiSigns
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Chạy lúc 3:00 AM UTC hàng ngày (~10:00 AM VN)
+  workflow_dispatch:     # Cho phép chạy thủ công để test (rất hữu ích)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run daily sync
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VECTOR_STORE_ID: ${{ secrets.VECTOR_STORE_ID }}
+        run: python main.py
+
+      - name: Upload log artifact (optional, để lưu log nếu cần)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-logs
+          path: daily-sync.log  # Nếu bạn có file log trong main.py
