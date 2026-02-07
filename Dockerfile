@@ -11,4 +11,4 @@ COPY . .
 ENTRYPOINT ["python"]
 
 # CMD mặc định nếu không truyền tham số
-CMD ["daily_sync.py"]
+CMD ["main.py"]
