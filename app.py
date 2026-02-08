@@ -8,7 +8,7 @@ import streamlit as st
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -82,9 +82,9 @@ def get_vectorstore():
         chunks = text_splitter.split_documents(docs)
 
         vectorstore = Chroma.from_documents(
-            chunks,
-            embeddings,
-            persist_directory=persist_dir
+            documents=chunks,
+            embedding=embeddings,
+            persist_directory="./chroma_db_optisigns"
         )
 
     return vectorstore.as_retriever(search_kwargs={"k": 4}), url_map
