@@ -7,7 +7,6 @@ __pycache__/
 env/
 venv/
 .env
-chroma_db_optisigns/
 __pycache__/
 *.pyc
 
