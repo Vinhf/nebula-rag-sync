@@ -2,7 +2,7 @@
 import os
 import json
 from pathlib import Path
-from xml.dom.minidom import Document
+from langchain_core.documents import Document
 from dotenv import load_dotenv
 import streamlit as st
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
@@ -19,68 +19,81 @@ load_dotenv()
 
 
 st.set_page_config(page_title="OptiBot", page_icon="🤖")
-st.title("OptiBot – Support Assistant")
+st.title("Support Assistant")
 st.caption("Demo miễn phí – Dữ liệu được cập nhật tự động hàng ngày qua GitHub Actions")
 
 def load_articles_with_metadata():
     docs = []
+    url_map = {}  # map slug -> html_url (để dùng khi format citation)
+
     articles_dir = Path("articles")
     
     for md_path in articles_dir.glob("*.md"):
         slug = md_path.stem
         meta_path = articles_dir / f"{slug}.meta.json"
         
-        if not meta_path.exists():
-            continue  # bỏ qua nếu không có meta
+        article_url = "No URL found"
+        if meta_path.exists():
+            with open(meta_path, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+            article_url = meta.get("html_url") or meta.get("url") or "No URL found"
         
-        # Đọc meta
-        with open(meta_path, "r", encoding="utf-8") as f:
-            meta = json.load(f)
-        
-        article_url = meta.get("html_url") or meta.get("url") or "No URL found"
+        url_map[slug] = article_url
         
         # Đọc nội dung .md
         with open(md_path, "r", encoding="utf-8") as f:
             content = f.read()
         
-        # Tạo document với metadata chứa URL thật
-        doc = Document(
-            page_content=content,
-            metadata={
-                "source": md_path.name,
-                "html_url": article_url,
-                "title": meta.get("title", slug.replace("-", " ").title())
-            }
-        )
+        # Tạo Document chỉ với nội dung (không metadata)
+        doc = Document(page_content=content)
+        
+        # Thêm slug vào metadata để map URL sau
+        doc.metadata["slug"] = slug
+        
         docs.append(doc)
     
-    return docs
-# Load documents
+    return docs, url_map
+
 @st.cache_resource
 def get_vectorstore():
-    
-    docs = load_articles_with_metadata() [:5]
+    persist_dir = "./chroma_db_optisigns"
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=200)
-    chunks = text_splitter.split_documents(docs)
+    # ✅ LUÔN load url_map (nhẹ, không tốn quota)
+    _, url_map = load_articles_with_metadata()
 
     embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001",
-    google_api_key=os.getenv("GEMINI_API_KEY")
+        model="models/gemini-embedding-001",
+        google_api_key=os.getenv("GEMINI_API_KEY")
     )
 
-    vectorstore = Chroma.from_documents(
-    chunks,
-    embeddings,
-    persist_directory="./chroma_db_optisigns"
-    )
-    return vectorstore.as_retriever(search_kwargs={"k": 4})
+    if os.path.exists(persist_dir):
+        # ✅ Chỉ load vectorstore
+        vectorstore = Chroma(
+            persist_directory=persist_dir,
+            embedding_function=embeddings
+        )
+    else:
+        docs, _ = load_articles_with_metadata()
 
-retriever = get_vectorstore()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=800,
+            chunk_overlap=200
+        )
+        chunks = text_splitter.split_documents(docs)
+
+        vectorstore = Chroma.from_documents(
+            chunks,
+            embeddings,
+            persist_directory=persist_dir
+        )
+
+    return vectorstore.as_retriever(search_kwargs={"k": 4}), url_map
+
+retriever, url_map = get_vectorstore()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview",
-    temperature=0.3,
+    model="gemini-2.5-flash-lite",
+    temperature=0,
     google_api_key=os.getenv("GEMINI_API_KEY")
 )
 
@@ -101,17 +114,14 @@ Answer:
 
 prompt = ChatPromptTemplate.from_template(prompt_template)
 
-
-
-
 def format_docs(docs):
     formatted = []
     for doc in docs:
         content = doc.page_content
-        article_url = doc.metadata.get("html_url", "No URL found")
+        slug = doc.metadata.get("slug", "")
+        article_url = url_map.get(slug, "No URL found")
         
-        # Cắt nội dung chính (bỏ front-matter nếu cần)
-        main_content = content[:600] + "..."  # đơn giản, hoặc tinh chỉnh thêm
+        main_content = content[:600] + "..."
         
         formatted.append(f"Article URL: {article_url}\n{main_content}")
     
